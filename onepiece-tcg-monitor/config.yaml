@@ -1,0 +1,84 @@
+# One Piece TCG Price Monitor Configuration
+
+# Discord Webhook URL (get this from your Discord server settings)
+discord_webhook_url: "YOUR_DISCORD_WEBHOOK_URL_HERE"
+
+# Check frequency in minutes (60 = 1 hour)
+check_interval_minutes: 60
+
+# Global alert thresholds (can be overridden per card)
+global_thresholds:
+  # Alert when price drops below this percentage of the highest tracked price
+  price_drop_percent: 15  # Alert on 15% drop
+
+  # Timeframe for percentage drop (in hours)
+  drop_timeframe_hours: 24
+
+  # Alert when listings fall below this number (scarcity signal)
+  low_inventory_threshold: 5
+
+  # Anti-FOMO: Ignore alerts if price spikes this much in a short time
+  spike_ignore_percent: 30  # Ignore if price jumps 30%+
+  spike_ignore_hours: 6     # within 6 hours
+
+# Cards to track
+cards:
+  # Example 1: Monkey D. Luffy (Gear 5)
+  - name: "Monkey D. Luffy"
+    set: "OP-05"
+    number: "119"  # Card number in set (optional)
+    rarity: "Secret Rare"
+    condition: "Near Mint"
+    language: "English"
+    # Card-specific thresholds (optional, overrides global)
+    target_price: 150.00  # Alert when price drops below $150
+    enabled: true
+
+  # Example 2: Trafalgar Law
+  - name: "Trafalgar Law"
+    set: "ST-10"
+    number: "010"
+    rarity: "Super Rare"
+    condition: "Near Mint"
+    language: "English"
+    target_price: 25.00
+    enabled: true
+
+  # Example 3: Roronoa Zoro
+  - name: "Roronoa Zoro"
+    set: "OP-01"
+    number: "001"
+    rarity: "Leader"
+    condition: "Near Mint"
+    language: "English"
+    target_price: 30.00
+    enabled: true
+
+  # Example 4: Japanese card
+  - name: "Shanks"
+    set: "OP-01"
+    number: "120"
+    rarity: "Secret Rare"
+    condition: "Near Mint"
+    language: "Japanese"
+    target_price: 200.00
+    enabled: false  # Set to true to enable tracking
+
+# Notification settings
+notifications:
+  # Send daily summary even if no alerts triggered
+  daily_summary: true
+  daily_summary_hour: 20  # 8 PM (24-hour format)
+
+  # Cooldown between duplicate alerts for same card (in hours)
+  alert_cooldown_hours: 6
+
+  # Include these details in alerts
+  include_trend_graph: false  # Future feature
+  include_price_history: true
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  log_to_file: true
+  log_file: "logs/monitor.log"

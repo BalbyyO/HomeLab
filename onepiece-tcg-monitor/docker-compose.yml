@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  tcg-monitor:
+    build: .
+    container_name: onepiece-tcg-monitor
+    restart: unless-stopped
+    volumes:
+      # Mount config file so you can edit without rebuilding
+      - ./config.yaml:/app/config.yaml
+      # Persist price history data
+      - ./data:/app/data
+      # Persist logs
+      - ./logs:/app/logs
+    environment:
+      - TZ=America/New_York  # Set your timezone
+    # Optional: Add these if you want to override config with env vars
+    # environment:
+    #   - DISCORD_WEBHOOK_URL=your_webhook_url_here
