@@ -6,16 +6,16 @@ Production-ready Docker Compose deployment for Nextcloud with MariaDB, Redis, an
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Docker Bridge Network                     │
+│                    Docker Bridge Network                    │
 │                      (nextcloud_net)                        │
 │                                                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │   MariaDB   │  │    Redis    │  │      Nextcloud      │ │
-│  │   (11.4)    │  │  (7-alpine) │  │   (LinuxServer.io)  │ │
-│  │             │  │             │  │                     │ │
-│  │  Database   │  │ File Lock   │  │    Web Interface    │ │
-│  │  Storage    │  │   Cache     │  │       :443          │ │
-│  └──────┬──────┘  └──────┬──────┘  └──────────┬──────────┘ │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │   MariaDB   │  │    Redis    │  │      Nextcloud      │  │
+│  │   (11.4)    │  │  (7-alpine) │  │   (LinuxServer.io)  │  │ 
+│  │             │  │             │  │                     │  │
+│  │  Database   │  │ File Lock   │  │    Web Interface    │  │
+│  │  Storage    │  │   Cache     │  │       :443          │  │
+│  └──────┬──────┘  └──────┬──────┘  └──────────┬──────────┘  │
 │         │                │                    │             │
 │         └────────────────┴────────────────────┘             │
 │                          │                                  │
