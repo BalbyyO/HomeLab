@@ -1,0 +1,6 @@
+# Environment file with secrets
+.env
+
+# Docker volumes (if using bind mounts)
+data/
+letsencrypt/

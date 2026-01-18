@@ -1,0 +1,47 @@
+networks:
+  proxy_net:
+    driver: bridge
+
+volumes:
+  npm_data:
+  npm_letsencrypt:
+
+services:
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:2.12.1
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    networks:
+      - proxy_net
+    ports:
+      - "80:80"
+      - "443:443"
+      - "81:81"
+    environment:
+      TZ: ${TZ:-UTC}
+    volumes:
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
+    healthcheck:
+      test: ["CMD", "/usr/bin/check-health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Optional: Cloudflare DDNS for dynamic IP updates
+  # Uncomment if you need automatic DNS updates
+  # cloudflare-ddns:
+  #   image: favonia/cloudflare-ddns:1.15.1
+  #   container_name: cloudflare-ddns
+  #   restart: unless-stopped
+  #   read_only: true
+  #   cap_drop: [ALL]
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   networks:
+  #     - proxy_net
+  #   environment:
+  #     CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+  #     DOMAINS: ${DOMAINS}
+  #     PROXIED: ${PROXIED:-true}
+  #     IP6_PROVIDER: ${IP6_PROVIDER:-none}
