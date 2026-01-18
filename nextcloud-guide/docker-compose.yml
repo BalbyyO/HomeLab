@@ -1,9 +1,14 @@
+# Nextcloud Production Stack
+# Docker Compose v2 - Ubuntu Server 24.04 LTS
+# Services: Nextcloud, MariaDB, Redis, Cron
+
 services:
   mariadb:
     image: mariadb:11.4
     container_name: nextcloud-mariadb
     restart: unless-stopped
-    command: --transaction-isolation=READ-COMMITTED
+    # Recommended settings for Nextcloud compatibility
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -15,17 +20,35 @@ services:
     networks:
       - nextcloud_net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: nextcloud-redis
+    restart: unless-stopped
+    # Internal only - no ports exposed to host
+    networks:
+      - nextcloud_net
+    # Disable persistence - Redis used only for transactional file locking cache
+    command: redis-server --save "" --appendonly no --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s
       retries: 5
 
   nextcloud:
-    image: lscr.io/linuxserver/nextcloud:latest
+    image: lscr.io/linuxserver/nextcloud:29.0.10
     container_name: nextcloud
     restart: unless-stopped
     depends_on:
       mariadb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       PUID: ${PUID}
@@ -35,19 +58,48 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_HOST_PORT: 6379
     volumes:
       - nextcloud_config:/config
       - nextcloud_data:/data
     ports:
-      - "443:443"
+      - "${NEXTCLOUD_PORT:-443}:443"
     networks:
       - nextcloud_net
 
-volumes:
-  mariadb_data:
-  nextcloud_config:
-  nextcloud_data:
+  cron:
+    image: lscr.io/linuxserver/nextcloud:29.0.10
+    container_name: nextcloud-cron
+    restart: unless-stopped
+    depends_on:
+      - nextcloud
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    volumes:
+      # Share config and data with main Nextcloud container
+      - nextcloud_config:/config
+      - nextcloud_data:/data
+    # Run cron.php every 5 minutes via system cron
+    entrypoint: >
+      /bin/sh -c "
+      echo '*/5 * * * * php -f /config/www/nextcloud/cron.php' | crontab -u abc - &&
+      crond -f -l 8
+      "
+    networks:
+      - nextcloud_net
 
 networks:
   nextcloud_net:
     driver: bridge
+    internal: false
+
+volumes:
+  mariadb_data:
+    driver: local
+  nextcloud_config:
+    driver: local
+  nextcloud_data:
+    driver: local
