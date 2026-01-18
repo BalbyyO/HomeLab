@@ -117,6 +117,7 @@ Edit the configuration:
 
 ```bash
 sudo nano /etc/crowdsec/config.yaml
+sudo nano /etc/crowdsec/local_api_credentials.yaml
 ```
 
 Find the `api.server` section and set:
