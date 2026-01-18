@@ -1,0 +1,24 @@
+# Environment file with secrets
+.env
+
+# Container config directories (created at runtime)
+gluetun/
+qbittorrent/
+prowlarr/
+sonarr/
+radarr/
+bazarr/
+flaresolverr/
+jellyfin/
+jellyseerr/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

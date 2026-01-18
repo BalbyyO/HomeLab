@@ -1,0 +1,226 @@
+# Media Stack - Docker Compose Configuration
+# A complete HomeLab media automation stack
+#
+# Before starting:
+# 1. Copy .env.example to .env and fill in your values
+# 2. Create the /data directory structure (see README)
+# 3. Run: docker compose up -d
+
+networks:
+  servarrnetwork:
+    name: servarrnetwork
+    ipam:
+      config:
+        - subnet: 172.39.0.0/24
+
+services:
+  # ============================================
+  # VPN Container (Gluetun)
+  # All torrent traffic routes through this
+  # ============================================
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      # qBittorrent WebUI (routed through VPN)
+      - 8080:8080
+      # qBittorrent incoming connections
+      - 6881:6881
+      - 6881:6881/udp
+    environment:
+      - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER}
+      - VPN_TYPE=${VPN_PROTOCOL}
+      - OPENVPN_USER=${OPENVPN_USER}
+      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+      - SERVER_REGIONS=${SERVER_REGIONS}
+      - SERVER_HOSTNAMES=${SERVER_HOSTNAMES}
+      - PRIVATE_INTERNET_ACCESS_OPENVPN_ENCRYPTION_PRESET=${PIA_ENCRYPTION_PRESET}
+      - OPENVPN_ENDPOINT_PORT=${OPENVPN_ENDPOINT_PORT}
+      - HEALTH_VPN_DURATION_INITIAL=${HEALTH_VPN_DURATION_INITIAL}
+      - TZ=${TZ}
+    volumes:
+      - ./gluetun:/gluetun
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/gluetun-entrypoint", "healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      servarrnetwork:
+        ipv4_address: 172.39.0.10
+
+  # ============================================
+  # Download Client (qBittorrent)
+  # Traffic routed through Gluetun VPN
+  # ============================================
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - WEBUI_PORT=8080
+    volumes:
+      - ./qbittorrent:/config
+      - ${DATA_PATH}/torrents:/data/torrents
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    network_mode: service:gluetun
+    restart: unless-stopped
+
+  # ============================================
+  # Indexer Manager (Prowlarr)
+  # Manages all your indexers in one place
+  # ============================================
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./prowlarr:/config
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 9696:9696
+    restart: unless-stopped
+    networks:
+      servarrnetwork:
+        ipv4_address: 172.39.0.5
+
+  # ============================================
+  # TV Shows Manager (Sonarr)
+  # Automates TV show downloads
+  # ============================================
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./sonarr:/config
+      - ${DATA_PATH}:/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 8989:8989
+    restart: unless-stopped
+    networks:
+      servarrnetwork:
+        ipv4_address: 172.39.0.6
+
+  # ============================================
+  # Movies Manager (Radarr)
+  # Automates movie downloads
+  # ============================================
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./radarr:/config
+      - ${DATA_PATH}:/data
+    ports:
+      - 7878:7878
+    restart: unless-stopped
+    networks:
+      servarrnetwork:
+        ipv4_address: 172.39.0.7
+
+  # ============================================
+  # Subtitle Manager (Bazarr)
+  # Automatically downloads subtitles
+  # ============================================
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./bazarr:/config
+      - ${DATA_PATH}:/data
+    ports:
+      - 6767:6767
+    restart: unless-stopped
+    networks:
+      servarrnetwork:
+        ipv4_address: 172.39.0.8
+
+  # ============================================
+  # Cloudflare Bypass (FlareSolverr)
+  # Helps indexers bypass Cloudflare protection
+  # ============================================
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+      - LOG_LEVEL=info
+      - CAPTCHA_SOLVER=none
+      - TZ=${TZ}
+    ports:
+      - 8191:8191
+    restart: unless-stopped
+    networks:
+      servarrnetwork:
+        ipv4_address: 172.39.0.9
+
+  # ============================================
+  # Media Server (Jellyfin)
+  # Stream your media to any device
+  # ============================================
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - JELLYFIN_PublishedServerUrl=${JELLYFIN_URL}
+    volumes:
+      - ./jellyfin:/config
+      - ${DATA_PATH}/media:/data/media
+    devices:
+      # Hardware acceleration (Intel iGPU) - remove if not needed
+      - /dev/dri:/dev/dri
+    ports:
+      - 8096:8096
+      - 7359:7359/udp
+      - 1900:1900/udp
+    restart: unless-stopped
+    networks:
+      servarrnetwork:
+        ipv4_address: 172.39.0.2
+
+  # ============================================
+  # Media Requests (Jellyseerr)
+  # Users can request movies/shows
+  # ============================================
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./jellyseerr:/app/config
+    ports:
+      - 5055:5055
+    restart: unless-stopped
+    networks:
+      servarrnetwork:
+        ipv4_address: 172.39.0.3
