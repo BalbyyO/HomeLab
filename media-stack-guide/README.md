@@ -20,29 +20,29 @@ A beginner-friendly Docker Compose stack for automating your media library. This
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         Your Network                             │
+│                         Your Network                            │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐  │
-│  │ Jellyfin │    │Jellyseerr│    │  Radarr  │    │  Sonarr  │  │
-│  │  :8096   │    │  :5055   │    │  :7878   │    │  :8989   │  │
-│  └────┬─────┘    └────┬─────┘    └────┬─────┘    └────┬─────┘  │
+│                                                                 │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐   │
+│  │ Jellyfin │    │Jellyseerr│    │  Radarr  │    │  Sonarr  │   │
+│  │  :8096   │    │  :5055   │    │  :7878   │    │  :8989   │   │
+│  └────┬─────┘    └────┬─────┘    └────┬─────┘    └────┬─────┘   │
 │       │               │               │               │         │
 │       └───────────────┴───────┬───────┴───────────────┘         │
-│                               │                                  │
+│                               │                                 │
 │                        ┌──────┴──────┐                          │
 │                        │   /data     │ (Shared Storage)         │
 │                        └──────┬──────┘                          │
-│                               │                                  │
-│  ┌──────────┐    ┌──────────┐│    ┌──────────┐    ┌──────────┐ │
-│  │ Prowlarr │    │  Bazarr  ││    │FlareSolvr│    │  Gluetun │ │
-│  │  :9696   │    │  :6767   ││    │  :8191   │    │   (VPN)  │ │
-│  └──────────┘    └──────────┘│    └──────────┘    └────┬─────┘ │
-│                              │                         │        │
-│                              │                   ┌─────┴──────┐ │
-│                              │                   │qBittorrent │ │
-│                              │                   │   :8080    │ │
-│                              └───────────────────┴────────────┘ │
+│                               │                                 │
+│  ┌──────────┐    ┌──────────┐ │   ┌──────────┐    ┌──────────┐  │
+│  │ Prowlarr │    │  Bazarr  │ │   │FlareSolvr│    │  Gluetun │  │
+│  │  :9696   │    │  :6767   │ │   │  :8191   │    │   (VPN)  │  │
+│  └──────────┘    └──────────┘ │   └──────────┘    └────┬─────┘  │
+│                               │                        │        │
+│                               │                  ┌─────┴──────┐ │
+│                               │                  │qBittorrent │ │
+│                               │                  │   :8080    │ │
+│                               └──────────────────┴────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -63,7 +63,8 @@ A beginner-friendly Docker Compose stack for automating your media library. This
 sudo apt update && sudo apt upgrade -y
 
 # Install Docker
-sudo apt install -y docker.io docker-compose-plugin
+curl -fsSL https://get.docker.com/ -o get-docker.sh
+sudo sh get-docker.sh
 
 # Start Docker and enable on boot
 sudo systemctl enable --now docker
@@ -76,8 +77,8 @@ sudo usermod -aG docker $USER
 
 ```bash
 # Create the data directory structure
-sudo mkdir -p /data/{torrents,media}/{movies,tv}
-sudo mkdir -p /data/torrents/{downloading,completed}
+sudo mkdir -p /data/media/{movies,tv}
+sudo mkdir -p /data/qbittorrents/{torrent,incomplete,completed}
 
 # Set ownership to your user (replace 1000:1000 with your PUID:PGID)
 sudo chown -R 1000:1000 /data
@@ -87,25 +88,24 @@ Your directory structure should look like this:
 
 ```
 /data/
-├── torrents/
-│   ├── downloading/    # Active downloads
-│   ├── completed/      # Finished downloads
-│   ├── movies/         # Movie torrents
-│   └── tv/             # TV show torrents
+├── qbittorrents/
+│   ├── incomplete/    # Active downloads
+│   ├── completed/     # Finished downloads
+│   ├── torrents/      # Movie / TV show torrents
 └── media/
-    ├── movies/         # Organized movie library
-    └── tv/             # Organized TV library
+    ├── movies/        # Organized movie library
+    └── tv/            # Organized TV library
 ```
 
 ### Step 3: Clone This Repository
 
 ```bash
 # Clone the repo
-git clone https://github.com/BalbyyO/media-stack-guide.git
+git clone https://github.com/BalbyyO/HomeLab/media-stack-guide.git
 cd media-stack-guide
 
 # Create your .env file from the template
-cp .env.example .env
+cp .env .env
 ```
 
 ### Step 4: Configure Your Environment
