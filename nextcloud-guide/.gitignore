@@ -1,0 +1,14 @@
+# Environment files with secrets
+.env
+
+# Docker volumes (if stored locally)
+data/
+config/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
