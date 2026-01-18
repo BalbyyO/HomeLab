@@ -164,7 +164,8 @@ Replace `YOUR_IP` with your server's IP address.
    ```
 3. Go to **Settings > Downloads**
 4. Set **Default Save Path** to `/data/torrents/completed`
-5. Set **Keep incomplete torrents in** to `/data/torrents/downloading`
+5. Set **Keep incomplete torrents in** to `/data/qbittorrents/incomplete`
+6. set **Keep .torrents files** to `/data/qbittorrents/torrents`
 
 ### 2. Prowlarr Setup (Indexers)
 
